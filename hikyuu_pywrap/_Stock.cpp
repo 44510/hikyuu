@@ -13,11 +13,20 @@
 
 using namespace boost::python;
 using namespace hku;
+namespace py = boost::python;
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(getIndex_overloads, getIndex, 1, 2)
 
 KRecord (Stock::*getKRecord1)(size_t pos, KQuery::KType kType) const = &Stock::getKRecord;
 KRecord (Stock::*getKRecord2)(const Datetime&, KQuery::KType kType) const = &Stock::getKRecord;
+
+static KQuery get_index_range(Stock* stk, KQuery q) {
+    size_t start = 0, end = 0;
+    if (!stk->getIndexRange(q, start, end)) {
+        return Null<KQuery>();
+    }
+    return KQuery(start, end, q.kType(), q.recoverType(), KQuery::INDEX);
+}
 
 void export_Stock() {
     class_<Stock>("Stock", "证券对象", init<>())
@@ -180,6 +189,14 @@ void export_Stock() {
     释放指定类别的内存K线数据
 
     :param Query.KType ktype: K线类型)")
+
+      .def("get_index_range", get_index_range, R"(get_index_range(self, query)
+    
+    根据KQuery指定的条件, 获取对应的K线位置范围。
+
+    :param Query query: 指定条件
+    :return: 返回转换为 INDEX 方式对应 Query
+    )")
 
       .def(self == self)
       .def(self != self)
